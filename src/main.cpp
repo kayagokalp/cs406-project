@@ -2,8 +2,8 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-
-#define DEBUG 1 
+#define DEBUG 0  
+#include "serial.cpp"
 
 
 //These are global for now. This will change when the implementation finishes.
@@ -11,7 +11,7 @@ std::vector<std::vector<int> > matrixOfEdges;
 std::vector<std::pair<int,int> > *edges;
 int numberOfVertices;
 
-int** adjacencyMatrix;
+bool** adjacencyMatrix;
 
 
 void check_for_duplicates()
@@ -38,21 +38,21 @@ void create_matrix_from_edges()
 	//Matrix representation of the graph (duplicate free)
 
 	//allocate memory for adjacencyMatrix
-	adjacencyMatrix = (int**) malloc((numberOfVertices+1) * sizeof(int*));
+	adjacencyMatrix = (bool**) malloc((numberOfVertices+1) * sizeof(bool*));
 	for (int i=0; i<numberOfVertices+1; i++)
 	{
-        	adjacencyMatrix[i] = (int *)malloc((numberOfVertices+1) * sizeof(int));
+        	adjacencyMatrix[i] = (bool *)malloc((numberOfVertices+1) * sizeof(bool));
 	}
 	
 	//fill all of the 2d array with 0.
 	for (int i = 0; i <  (numberOfVertices+1); i++)
       		for (int j = 0; j < (numberOfVertices+1); j++)
-			adjacencyMatrix[i][j] = 0;
+			adjacencyMatrix[i][j] = false;
 
 	for(int i = 0; i< edges->size(); i++)
 	{
-		adjacencyMatrix[edges->at(i).first][edges->at(i).second] = 1;
-		adjacencyMatrix[edges->at(i).second][edges->at(i).first] = 1;
+		adjacencyMatrix[edges->at(i).first][edges->at(i).second] = true;
+		adjacencyMatrix[edges->at(i).second][edges->at(i).first] = true;
 	}
 	#if DEBUG
 	for(int i = 0; i < numberOfVertices+1; i++)
@@ -123,6 +123,7 @@ void clear_used_mem()
 
 int main(int argc, char* argv[])
 {
+	int vertexIDtoSearch = -1;
 	numberOfVertices = 0;
 	std::string filename = "";
 	edges = NULL;
@@ -130,12 +131,14 @@ int main(int argc, char* argv[])
 	if(argc > 1)
 	{
 		filename = std::string(argv[1]);
+		vertexIDtoSearch = stoi(std::string(argv[2]));
 	}
 	if(read_file(filename))
 	{
-		std::cout<<" numberOfVertices = " << numberOfVertices << "\n";
+		std::cout<<"numberOfVertices = " << numberOfVertices << "\n";
 		check_for_duplicates();
 		create_matrix_from_edges();
+		printf("%d is result\n",get_number_of_cycles_serial(adjacencyMatrix,4, numberOfVertices,vertexIDtoSearch));
 	}
 	clear_used_mem();
 	return 0;
