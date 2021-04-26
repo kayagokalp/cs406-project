@@ -31,7 +31,7 @@ void check_for_duplicates()
 void create_matrix_from_edges()
 {
 	//Matrix representation of the graph (duplicate free)
-	matrixOfEdges.push_back();
+	//matrixOfEdges.push_back();
 }
 
 void create_csr_representation()
