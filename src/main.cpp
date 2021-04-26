@@ -11,6 +11,9 @@ std::vector<std::vector<int> > matrixOfEdges;
 std::vector<std::pair<int,int> > *edges;
 int numberOfVertices;
 
+int** adjacencyMatrix;
+
+
 void check_for_duplicates()
 {
 	//Some of the input files include both a-b and b-a for same edge.
@@ -18,7 +21,6 @@ void check_for_duplicates()
 	//We are assuming there are no repeating (only a-b is available in the input)
 	//So we create b-a and then we check if there are any duplicates in the list.
 
-	//TODO(kaya): a-a edges should be deleted.
  
 	edges->erase(std::remove_if(edges->begin(),edges->end(), [] (std::pair<int,int> &p) {return p.first == p.second;}),edges->end());
 	std::sort(edges->begin(), edges->end());
@@ -34,7 +36,34 @@ void check_for_duplicates()
 void create_matrix_from_edges()
 {
 	//Matrix representation of the graph (duplicate free)
-	//matrixOfEdges.push_back();
+
+	//allocate memory for adjacencyMatrix
+	adjacencyMatrix = (int**) malloc((numberOfVertices+1) * sizeof(int*));
+	for (int i=0; i<numberOfVertices+1; i++)
+	{
+        	adjacencyMatrix[i] = (int *)malloc((numberOfVertices+1) * sizeof(int));
+	}
+	
+	//fill all of the 2d array with 0.
+	for (int i = 0; i <  (numberOfVertices+1); i++)
+      		for (int j = 0; j < (numberOfVertices+1); j++)
+			adjacencyMatrix[i][j] = 0;
+
+	for(int i = 0; i< edges->size(); i++)
+	{
+		adjacencyMatrix[edges->at(i).first][edges->at(i).second] = 1;
+		adjacencyMatrix[edges->at(i).second][edges->at(i).first] = 1;
+	}
+	#if DEBUG
+	for(int i = 0; i < numberOfVertices+1; i++)
+	{
+		for(int j = 0; j<numberOfVertices+1; j++)
+		{
+			printf("%d ", adjacencyMatrix[i][j]);
+		}
+		printf("\n");
+	}
+	#endif
 }
 
 void create_csr_representation()
@@ -97,6 +126,7 @@ int main(int argc, char* argv[])
 	numberOfVertices = 0;
 	std::string filename = "";
 	edges = NULL;
+	adjacencyMatrix = NULL;
 	if(argc > 1)
 	{
 		filename = std::string(argv[1]);
@@ -105,6 +135,7 @@ int main(int argc, char* argv[])
 	{
 		std::cout<<" numberOfVertices = " << numberOfVertices << "\n";
 		check_for_duplicates();
+		create_matrix_from_edges();
 	}
 	clear_used_mem();
 	return 0;
