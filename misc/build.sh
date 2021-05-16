@@ -1,2 +1,2 @@
 parentdir="$(dirname "$(pwd)")"
-g++ $parentdir/cs406-project/src/main.cpp -o $parentdir/cs406-project/build/program.out -std=c++11
+g++ $parentdir/cs406-project-main/src/main.cpp -o $parentdir/cs406-project-main/build/program.out -std=c++14 -O3 -fopenmp

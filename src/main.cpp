@@ -2,16 +2,16 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#define DEBUG 0  
-#include "serial.cpp"
-
+#include <string.h>
+#include <algorithm>
+#define DEBUG 0
+#include "cpu-implementation.cpp"
 
 //These are global for now. This will change when the implementation finishes.
 std::vector<std::vector<int> > matrixOfEdges;
 std::vector<std::pair<int,int> > *edges;
 int numberOfVertices;
 
-bool** adjacencyMatrix;
 
 
 void check_for_duplicates()
@@ -33,26 +33,17 @@ void check_for_duplicates()
 	#endif
 }
 
-void create_matrix_from_edges()
+std::vector<std::vector<int> > create_matrix_from_edges()
 {
 	//Matrix representation of the graph (duplicate free)
 
-	//allocate memory for adjacencyMatrix
-	adjacencyMatrix = (bool**) malloc((numberOfVertices+1) * sizeof(bool*));
-	for (int i=0; i<numberOfVertices+1; i++)
-	{
-        	adjacencyMatrix[i] = (bool *)malloc((numberOfVertices+1) * sizeof(bool));
-	}
-	
-	//fill all of the 2d array with 0.
-	for (int i = 0; i <  (numberOfVertices+1); i++)
-      		for (int j = 0; j < (numberOfVertices+1); j++)
-			adjacencyMatrix[i][j] = false;
+	std::vector<std::vector<int> > adjacencyMatrix(numberOfVertices, std::vector<int>(numberOfVertices,0));
 
 	for(int i = 0; i< edges->size(); i++)
 	{
-		adjacencyMatrix[edges->at(i).first][edges->at(i).second] = true;
-		adjacencyMatrix[edges->at(i).second][edges->at(i).first] = true;
+		std::cout<<i<< std::endl;
+		adjacencyMatrix[edges->at(i).first][edges->at(i).second] = 1;
+		adjacencyMatrix[edges->at(i).second][edges->at(i).first] = 1;
 	}
 	#if DEBUG
 	for(int i = 0; i < numberOfVertices+1; i++)
@@ -64,11 +55,43 @@ void create_matrix_from_edges()
 		printf("\n");
 	}
 	#endif
+	return adjacencyMatrix;
 }
 
-void create_csr_representation()
+void create_csr_representation(std::vector<int> &adj, std::vector<int> &xadj)
 {
-	//TODO(kaya) : create csr
+	std::vector<int> numberOfElementsPerRow(numberOfVertices, 0);
+	for(int i = 0; i<edges->size(); i++)
+	{
+		int currentRow = edges->at(i).first;
+		int currentCol = edges->at(i).second;
+		numberOfElementsPerRow[currentRow]++;
+		adj.push_back(currentCol);
+	}
+	xadj[0] = 0;
+	for(int i = 1; i<numberOfElementsPerRow.size(); i++)
+	{
+		xadj[i] += numberOfElementsPerRow[i-1];
+		xadj[i+1] = xadj[i];  
+	}
+	xadj[xadj.size()-1] = xadj[xadj.size()-2] + numberOfElementsPerRow[numberOfVertices-1];
+
+
+	#if DEBUG
+
+	std::cout<<"adj :"<<std::endl;
+	for(int i = 0; i<adj.size(); i++)
+	{
+		std::cout<<adj[i] << " ";
+	}
+
+	std::cout<<"xadj"<<std::endl;
+	for(int i = 0; i<xadj.size(); i++)
+	{
+		std::cout<<xadj[i]<< " ";
+	}
+	std::cout<<std::endl;
+	#endif
 }
 
 bool read_file(std::string &filename)
@@ -123,23 +146,157 @@ void clear_used_mem()
 
 int main(int argc, char* argv[])
 {
-	int vertexIDtoSearch = -1;
+	int cycleLength = 0;
 	numberOfVertices = 0;
 	std::string filename = "";
 	edges = NULL;
-	adjacencyMatrix = NULL;
 	if(argc > 1)
 	{
 		filename = std::string(argv[1]);
-		vertexIDtoSearch = stoi(std::string(argv[2]));
+		cycleLength = stoi(std::string(argv[2]));
 	}
 	if(read_file(filename))
 	{
 		std::cout<<"numberOfVertices = " << numberOfVertices << "\n";
 		check_for_duplicates();
-		create_matrix_from_edges();
-		printf("%d is result\n",get_number_of_cycles_serial(adjacencyMatrix,4, numberOfVertices,vertexIDtoSearch));
+		std::cout<<"duplicateDone\n";
+		std::vector<int> adj;
+		std::vector<int> xadj (numberOfVertices+1,0);
+		create_csr_representation(adj,xadj);		
+		std::vector<int> values (adj.size(),1);
+		std::cout<<"CSR READY"<<std::endl;
+		std::vector<int> res_adj;
+		std::vector<int> res_xadj(numberOfVertices+1);
+		std::vector<int> res_val;
+		omp_set_num_threads(60);
+//		multiply(adj,xadj,adj,xadj,values,values,numberOfVertices,res_adj,res_xadj,res_val);
+
+		std::vector<int> trial_adj;
+		std::vector<int> trial_xadj;
+		std::vector<int> trial_values;
+/*
+		trial_adj.push_back(0);
+		trial_adj.push_back(2);
+		trial_adj.push_back(4);
+		trial_adj.push_back(1);
+		trial_adj.push_back(3);
+		trial_adj.push_back(0);
+		trial_adj.push_back(2);
+		trial_adj.push_back(4);
+		trial_adj.push_back(1);
+		trial_adj.push_back(3);
+		trial_adj.push_back(0);
+		trial_adj.push_back(2);
+		trial_adj.push_back(4);
+		
+
+		trial_xadj.push_back(0);
+		trial_xadj.push_back(3);
+		trial_xadj.push_back(5);
+		trial_xadj.push_back(8);
+		trial_xadj.push_back(10);
+		trial_xadj.push_back(13);
+		
+
+		trial_values.push_back(2);
+		trial_values.push_back(2);
+		trial_values.push_back(2);
+
+		trial_values.push_back(3);
+		trial_values.push_back(3);
+
+		trial_values.push_back(2);
+		trial_values.push_back(2);
+		trial_values.push_back(2);
+
+		trial_values.push_back(3);
+		trial_values.push_back(3);
+
+		trial_values.push_back(2);
+		trial_values.push_back(2);
+		trial_values.push_back(2);
+*/
+		//multiply2(adj,xadj,adj,xadj,values,values,numberOfVertices,res_adj,res_xadj,res_val);
+		find_result(adj,xadj,values,numberOfVertices,cycleLength);
+/*
+		std::cout<<"ADJ"<<std::endl;
+		#if DEBUG
+
+		for(int i = 0; i<res_adj.size(); i++)
+		{
+			std::cout<<res_adj[i]<<" ";
+		}
+		std::cout<<std::endl<<std::endl;
+		
+		std::cout<<"XADJ"<<std::endl;
+		for(int i = 0; i<res_xadj.size(); i++)
+		{
+			std::cout<<res_xadj[i]<<" ";
+		}
+		std::cout<<std::endl<<std::endl;
+		
+		std::cout<<"VALUES"<<std::endl;
+		for(int i = 0; i<res_val.size(); i++)
+		{
+			std::cout<<res_val[i]<<" ";
+		}
+		std::cout<<std::endl<<std::endl;		
+		#endif
+		std::vector<int> res2_adj;
+		std::vector<int> res2_xadj(numberOfVertices+1);
+		std::vector<int> res2_val;
+		
+		multiply2(res_adj,res_xadj,adj,xadj,res_val,values,numberOfVertices,res2_adj,res2_xadj,res2_val);
+		std::cout<<"ADJ"<<std::endl;
+		#if DEBUG
+
+		for(int i = 0; i<res2_adj.size(); i++)
+		{
+			std::cout<<res2_adj[i]<<" ";
+		}
+		std::cout<<std::endl<<std::endl;
+		
+		std::cout<<"XADJ"<<std::endl;
+		for(int i = 0; i<res2_xadj.size(); i++)
+		{
+			std::cout<<res2_xadj[i]<<" ";
+		}
+		std::cout<<std::endl<<std::endl;
+		
+		std::cout<<"VALUES"<<std::endl;
+		for(int i = 0; i<res2_val.size(); i++)
+		{
+			std::cout<<res2_val[i]<<" ";
+		}
+		std::cout<<std::endl<<std::endl;		
+		#endif	
+*/			
+			
+	//	std::vector<std::vector<int> > mat1 = create_matrix_from_edges();
+		//multiply_matrix(adj,xadj,values,adj,xadj,values,numberOfVertices);
+		//find_res(adj,xadj,values,numberOfVertices,3);
+//		std::cout<<"MATRIX READY"<<std::endl;
+
+		//printf("\n");
+		//printf("CSR READY\n");
+		//std::vector<int> result(numberOfVertices, 0);
+		//find_cycles(mat1,numberOfVertices,cycleLength,result);
+			
+//		std::vector<std::vector<int> > mat1 = create_matrix_from_edges();
+		//multiply_matrix(adj,xadj,values,adj,xadj,values,numberOfVertices);
+		//find_res(adj,xadj,values,numberOfVertices,3);
+//		std::cout<<"MATRIX READY"<<std::endl;
+
+		//printf("\n");
+		//printf("CSR READY\n");
+		//std::vector<int> result(numberOfVertices, 0);
+		//find_cycles(mat1,numberOfVertices,cycleLength,result);
+		//for(int k = 0; k<numberOfVertices; k++)
+		//{
+		//	std::cout << k <<" "<<result[k]<<std::endl;
+		//}
+		//printf("%d is result\n",get_number_of_cycles_serial(adjacencyMatrix,4, numberOfVertices,vertexIDtoSearch));
 	}
-	clear_used_mem();
+		//clear_used_mem();
 	return 0;
-} 
+}
