@@ -38,7 +38,7 @@ __global__ void find_result_from_matrix(int *adj, int *xadj, int *values, int si
 			int col_ptr = adj[col_iter];
 			if(col_ptr == i)
 			{
-				cycle_result[i] = values[col_iter]/cycle_length;
+				cycle_result[i] = values[col_iter]/(2*cycle_length);
 			}
 		}
 	}
