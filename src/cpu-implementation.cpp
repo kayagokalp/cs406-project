@@ -29,11 +29,11 @@ void find_result(std::vector<int> &adj, std::vector<int> &xadj,std::vector<int> 
 	}else if(path_length == 5)
 	{
 		std::vector<int> pa_res_adj;
-		std::vector<int> pa_res_xadj;
+		std::vector<int> pa_res_xadj(size+1,0);
 		std::vector<int> pa_res_values;
 
 		std::vector<int> pa2_res_adj;
-		std::vector<int> pa2_res_xadj;
+		std::vector<int> pa2_res_xadj(size+1,0);
 		std::vector<int> pa2_res_values;
 
 		multiply2(adj,xadj,adj,xadj,values,values,size,pa_res_adj,pa_res_xadj,pa_res_values); // A*A
@@ -49,7 +49,7 @@ void find_result(std::vector<int> &adj, std::vector<int> &xadj,std::vector<int> 
 		{
 			if(i == res_adj[index])
 			{
-				result[i] = res_values[index]/6;
+				result[i] = res_values[index]/(2*path_length);
 			}
 		}
 	}
