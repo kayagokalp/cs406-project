@@ -47,6 +47,7 @@ Our output:
         3 - 3
         4 - 2
 
+
 To use the “multiplication method” we need to multiply our matrix with itself 4 times. The result is shown at the Figure 2.2
 
 <img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Figure2_2.png" width="300px" alt="Figure 2.2"/>
@@ -63,7 +64,7 @@ For the CPU implementation with OpenMP, the parallelization was utilized using g
 
 In the GPU implementation with Cuda, each line in the matrix was assigned to a thread. The thread and block structure is 32 x 1024 where 32 is the amount of the blocks and 1024 is the amount of threads per block. Multiplication operation for each line is executed by a different thread in the structure. In the GPU implementation, instead of vectors, arrays were used since they are more efficient and convenient when it comes to memory allocation and memory sharing between the source and device. Since the amount of the multiplication results is still unknown and a certain amount of memory has to be allocated prior to saving the results, first the amount that is going to be allocated is calculated. After that is determined, multiplication is executed. Also, for the parallelization purpose, since the array that holds the results is shared between the threads, a look up table is used which holds the start and end positions for each thread.
 
-## Techincal Description of Software
+## Technical Description of Software
 
 #### Folder Structure:
 
@@ -128,6 +129,29 @@ One way to overcome these obstacles is to store only the non-zero data elements 
 | 60       | 3.23    | 5.90    | 1.48       |
 
 When it comes to the scaling, our program starts good but as the thread number increases the speed-up rate does not increase proportionally. That is why we think our parallel version has weak scaling.
+
+GPU Performance:
+
+#### GPU - Cycle of 3 => 513.056458ms
+
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle3GPU.png" alt="Gpu 3 Cycle"/>
+
+#### GPU - Cycle of 4 => 2935.376221ms
+
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle4GPU.png" alt="Gpu 3 Cycle"/>
+
+#### GPU - Cycle of 5 => 3644.884766ms
+
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle5GPU.png" alt="Gpu 3 Cycle"/>
+
+## Achievements
+
+Within the scope of the project, parallelization of the algorithm was succeeded and a considerable amount of improvements were recorded both in the CPU and GPU implementations. Further improvements can be recorded by changing the scheduling method with dynamic scheduling. Also other algorithms can be considered such as BFS and DFS, whose implementation will be more complex in terms of parallelization.
+
+## Resources
+
+- [Github Repository](https://github.com/kayagokalp/cs406-project)
+- [Dataset](https://github.com/kayagokalp/cs406-project/tree/main/res)
 
 ## References
 
