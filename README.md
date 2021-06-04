@@ -177,29 +177,29 @@ GPU Performance:
 
 #### GPU - Cycle of 3 => 465.82ms
 
-<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle3GPU.png" alt="Gpu 3 Cycle"/>
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/im/Cycle3GPU.png" alt="Gpu 3 Cycle"/>
 
 #### GPU - Cycle of 4 => 2389.72ms
 
-<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle4GPU.png" alt="Gpu 3 Cycle"/>
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/im/Cycle4GPU.png" alt="Gpu 3 Cycle"/>
 
 #### GPU - Cycle of 5 => 3124.56ms
 
-<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle5GPU.png" alt="Gpu 3 Cycle"/>
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/im/Cycle5GPU.png" alt="Gpu 3 Cycle"/>
 
 ## dblp.txt
 
 #### GPU - Cycle of 3 => 1116.0ms
 
-<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle3GPU-dblp.png" alt="Gpu 3 Cycle"/>
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/im/Cycle3GPU-DBLP.png" alt="Gpu 3 Cycle"/>
 
 #### GPU - Cycle of 4 => 4320.0ms
 
-<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle4GPU-dblp.png" alt="Gpu 3 Cycle"/>
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/im/Cycle4GPU-DBLP.png" alt="Gpu 3 Cycle"/>
 
 #### GPU - Cycle of 5 => 7896.0ms
 
-<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle5GPU-dblp.png" alt="Gpu 3 Cycle"/>
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/im/Cycle5GPU-DBLP.png" alt="Gpu 3 Cycle"/>
 
 ## Conclusion
 
