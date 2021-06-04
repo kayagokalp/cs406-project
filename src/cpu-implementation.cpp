@@ -4,6 +4,8 @@ void multiply2(std::vector<int> &adj, std::vector<int> &xadj, std::vector<int> &
 
 void find_result(std::vector<int> &adj, std::vector<int> &xadj,std::vector<int> &values, int size, int path_length)
 {
+
+	double start = omp_get_wtime();
 	std::vector<int> res_adj;
 	std::vector<int> res_xadj(size+1, 0);
 	std::vector<int> res_values;
@@ -14,7 +16,7 @@ void find_result(std::vector<int> &adj, std::vector<int> &xadj,std::vector<int> 
 		std::vector<int> pa_res_xadj(size+1, 0);
 		std::vector<int> pa_res_values;
 		
-		multiply2(adj,xadj,adj,xadj,values,values,size,pa_res_adj,pa_res_xadj,pa_res_values); // A*A
+		multiply2(adj,xadj,adj,xadj,values,values,size,res_adj,res_xadj,res_values); // A*A
 		multiply2(pa_res_adj, pa_res_xadj, adj, xadj, pa_res_values, values,size, res_adj, res_xadj, res_values);	//A^2 * A	
 
 	}else if(path_length == 4)
@@ -29,11 +31,11 @@ void find_result(std::vector<int> &adj, std::vector<int> &xadj,std::vector<int> 
 	}else if(path_length == 5)
 	{
 		std::vector<int> pa_res_adj;
-		std::vector<int> pa_res_xadj(size+1,0);
+		std::vector<int> pa_res_xadj(size+1, 0);
 		std::vector<int> pa_res_values;
 
 		std::vector<int> pa2_res_adj;
-		std::vector<int> pa2_res_xadj(size+1,0);
+		std::vector<int> pa2_res_xadj(size+1, 0);
 		std::vector<int> pa2_res_values;
 
 		multiply2(adj,xadj,adj,xadj,values,values,size,pa_res_adj,pa_res_xadj,pa_res_values); // A*A
@@ -53,6 +55,9 @@ void find_result(std::vector<int> &adj, std::vector<int> &xadj,std::vector<int> 
 			}
 		}
 	}
+	double end = omp_get_wtime();
+	int nt = omp_get_max_threads(); 
+	std::cout << nt << " Threads  --  " << "Time: " << end - start << " s." << std::endl;
 	
 	for(int i = 0; i<result.size(); i++)
 	{
@@ -67,7 +72,6 @@ void multiply2(std::vector<int> &adj, std::vector<int> &xadj, std::vector<int> &
 	int number_of_threads = size;
 	std::vector<std::vector<int> > res_adj(size);
 	std::vector<std::vector<int> > res_values(size);
-	std::cout<<"starting"<<std::endl;
 	#pragma omp parallel for schedule(guided)	
 	for(int i = 0; i< size; i++)
         {
@@ -99,16 +103,6 @@ void multiply2(std::vector<int> &adj, std::vector<int> &xadj, std::vector<int> &
 		res_adj[i] = pa_adj;
 	}
 	
-/*	
-	for(int i = 0; i< size; i++)
-	{
-		for(int j = 0; j<res_adj[i].size(); j++)
-		{
-			std::cout<<res_adj[i][j] << " "<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
-*/
 	for(int i = 0; i< size; i++)
 	{
 		for(int j = 0; j<res_values[i].size(); j++)
@@ -123,21 +117,9 @@ void multiply2(std::vector<int> &adj, std::vector<int> &xadj, std::vector<int> &
 			result_adj.push_back(res_adj[i][j]);
 		}
 	}
-/*	
-	for(int i = 0; i<result_values.size(); i++)
-	{
-		std::cout<<result_values[i]<< " ";
-	}
-*/
 	result_xadj[0] = 0;
 	for(int i = 1; i<result_xadj.size(); i++)
 	{
 		result_xadj[i] += result_xadj[i-1];
 	}
-/*
-	for(int i = 0; i<result_xadj.size(); i++)
-	{
-		std::cout<<result_xadj[i]<<" ";
-	}
-*/
 }

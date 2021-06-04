@@ -10,6 +10,8 @@
 #include <string.h>
 
 #define DEBUG 0
+#define BLOCK_NUM 64
+#define BLOCK_SIZE 1024
 
 //Error check-----
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -26,9 +28,9 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 //Moreover, you may also want to look at how to use cuda-memcheck and cuda-gdb for debugging.
 
 
-__global__ void find_result_from_matrix(int *adj, int *xadj, int *values, int size, int *cycle_result, int cycle_length)
+__global__ void find_result_from_matrix(int *adj, int *xadj, int *values, int size, int *cycle_result)
 {
-	int step = 32*1024;
+	int step = BLOCK_NUM*BLOCK_SIZE;
 	int id = blockDim.x * blockIdx.x + threadIdx.x; //Global id for the thread
 	for(int i = id; i<size; i+= step)
 	{
@@ -38,7 +40,7 @@ __global__ void find_result_from_matrix(int *adj, int *xadj, int *values, int si
 			int col_ptr = adj[col_iter];
 			if(col_ptr == i)
 			{
-				cycle_result[i] = values[col_iter]/(2*cycle_length);
+				cycle_result[i] = values[col_iter]/6;
 			}
 		}
 	}
@@ -47,7 +49,7 @@ __global__ void find_result_from_matrix(int *adj, int *xadj, int *values, int si
 
 __global__ void multiply_matrix(int *adj, int *xadj, int *tadj, int *txadj,int* values, int *tvalues, int size, int * lookup_place, int *res_adj, int *res_values)
 {
-	int step = 32 * 1024;
+	int step = BLOCK_NUM * BLOCK_SIZE;
 	int id = blockDim.x * blockIdx.x + threadIdx.x; //Global id for the thread
 	for(int i = id; i<size; i+= step)
 	{
@@ -80,7 +82,7 @@ __global__ void multiply_matrix(int *adj, int *xadj, int *tadj, int *txadj,int* 
 
 __global__ void find_required_memory(int *adj, int *xadj, int *tadj, int *txadj, int size, int* result)
 {
-	int step = 32 * 1024;
+	int step = BLOCK_NUM * BLOCK_SIZE;
 	int id = blockDim.x * blockIdx.x + threadIdx.x; //Global id for the thread
 	for(int i = id; i<size; i+= step)
 	{
@@ -129,7 +131,7 @@ void wrapper(int* adj, int* xadj, int* tadj, int* txadj, int* values, int *tvalu
   cudaMemcpy(d_values,values,values_size*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_tvalues,tvalues,tvalues_size*sizeof(int), cudaMemcpyHostToDevice);
   
-  find_required_memory<<<32,1024>>>(d_adj, d_xadj, d_tadj, d_txadj,size,d_res_size);
+  find_required_memory<<<BLOCK_NUM,BLOCK_SIZE>>>(d_adj, d_xadj, d_tadj, d_txadj,size,d_res_size);
   gpuErrchk( cudaDeviceSynchronize() );
   cudaMemcpy(res_size, d_res_size, size * sizeof(int), cudaMemcpyDeviceToHost);
   int sum = 0;
@@ -152,7 +154,7 @@ void wrapper(int* adj, int* xadj, int* tadj, int* txadj, int* values, int *tvalu
   } 
   cudaMemcpy(d_place_look_up, place_look_up, size*sizeof(int), cudaMemcpyHostToDevice);
   //place_look_up will be used to determine where to enter the adj and values data for each line
-  multiply_matrix<<<32,1024>>>(d_adj,d_xadj,d_tadj,d_txadj,d_values,d_tvalues,size,d_place_look_up,d_res_adj,d_res_values);
+  multiply_matrix<<<BLOCK_NUM,BLOCK_SIZE>>>(d_adj,d_xadj,d_tadj,d_txadj,d_values,d_tvalues,size,d_place_look_up,d_res_adj,d_res_values);
   gpuErrchk( cudaDeviceSynchronize() );
   res_adj = (int*)(malloc(sum * sizeof(int)));
   res_values = (int*)(malloc(sum * sizeof(int)));
@@ -167,7 +169,6 @@ void wrapper(int* adj, int* xadj, int* tadj, int* txadj, int* values, int *tvalu
   result_adj_size = sum;
   result_xadj_size = size+1;
   result_values_size = sum;
-  printf("multiplication done\n");
   free(place_look_up);
   free(res_size);
   cudaFree(d_adj);
@@ -260,7 +261,7 @@ void find_result_gpu(std::vector<int> &adj, std::vector<int> &xadj, std::vector<
 	cudaMemcpy(d_adj, result_adj, result_adj_size * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_xadj, result_xadj, result_xadj_size * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_values, result_values, result_values_size * sizeof(int), cudaMemcpyHostToDevice);
-	find_result_from_matrix<<<32,1024>>>(d_adj, d_xadj, d_values, size, d_cycle_result,cycle_length);	
+	find_result_from_matrix<<<BLOCK_NUM,BLOCK_SIZE>>>(d_adj, d_xadj, d_values, size, d_cycle_result);	
   	gpuErrchk( cudaDeviceSynchronize() );
 	int* result_cycle = (int*)malloc(size * sizeof(int));	
 	cudaMemcpy(result_cycle, d_cycle_result, size * sizeof(int), cudaMemcpyDeviceToHost);
@@ -271,12 +272,12 @@ void find_result_gpu(std::vector<int> &adj, std::vector<int> &xadj, std::vector<
   	
 	cudaEventElapsedTime(&elapsedTime, start, stop);
 	printf("Elapsed time: %f\n",elapsedTime);
-	/*
+/*	
 	for(int i = 0; i<size; i++)
 	{
 		printf("%d	%d\n", i, result_cycle[i]);
 	}
-	*/
+*/	
 	cudaFree(d_adj);
 	cudaFree(d_xadj);
 	cudaFree(d_values);
