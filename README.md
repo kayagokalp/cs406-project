@@ -1,4 +1,4 @@
-# CS406 Parallel Computing
+﻿# CS406 Parallel Computing
 
 # Term Project Final Report
 
@@ -20,9 +20,9 @@ When working on small samples such as the above example, HPC is not needed at al
 
 ## Solution Description & Other Existing Solutions
 
-In order to find the number of k length cycles we used matrix representation of the undirected graphs. Then we’ve multiplied the matrices according to the k value given by the user. E.g. if k = 3, we multiply the matrix 3 times and divide the diagonals of the resulting matrix by 6. The corresponding row i and column i is the starting and ending index of the undirected graph. So if in the resulting matrix, [i,i] = 18, there are 3 (18/6) cycles which start from i and end at i.
+In order to find the number of k length circuits we used matrix representation of the undirected graphs. Then we’ve multiplied the matrices according to the k value given by the user. E.g. if k = 3, we multiply the matrix 3 times and divide the diagonals of the resulting matrix by 6. The corresponding row i and column i is the starting and ending index of the undirected graph. So if in the resulting matrix, [i,i] = 18, there are 3 (18/6) circuits which start from i and end at i.
 
-There are also 2 other solutions that we’ve found worth mentioning. "Detecting Cycles in Graphs Using Parallel Capabilities of GPU" by Mahdi et al. talks about detecting cycles in undirected graphs in GPU. The process utilizes GPU’s high number of processing units by doing the same (simple) tasks on different data. The process as discussed by Mahdi et al. can result in a lot of iterations so they applied the pretesting via a method called virtual adjacency matrix. This method seems to be really effective and we are planning to use a similar method. Also, an approximation related to connections between nodes (rate of connectedness) of the graph is used to even lower the required iterations. Because even though the virtual adjacency matrix method is used, the resulting required iterations are proportional to c!/2c where c is the cycle length so long cycles result in a lot of iterations. But in our case, the max cycle length is 5. So we may not need to use the last method.
+There are also 2 other solutions that we’ve found worth mentioning. "Detecting Cycles in Graphs Using Parallel Capabilities of GPU" by Mahdi et al. talks about detecting cycles in undirected graphs in GPU. The process utilizes GPU’s high number of processing units by doing the same (simple) tasks on different data. The process as discussed by Mahdi et al. can result in a lot of iterations so they applied the pretesting via a method called virtual adjacency matrix. This method seems to be really effective and we are planning to use a similar method. Also, an approximation related to connections between nodes (rate of connectedness) of the graph is used to even lower the required iterations. Because even though the virtual adjacency matrix method is used, the resulting required iterations are proportional to c!/2c where c is the cycle length so long cycles result in a lot of iterations. But in our case, the max cycle length is 5. So we decided not to move on with this method.
 
 We also searched for some code examples to get familiar with the process of finding cycles in undirected graphs. One such example we found is from a site called “geeksforgeeks.org”.In this example they are working on an undirected graph which has V = 5 vertices and they are looking for cycles of length n = 4. They use DFS to find every path of length (n-1) from a vertex and check if the path leads back to the starting point. They keep track of the marked vertices using an array of size V. They iterate through each vertex and unmark the ones that do not form a cycle during the process, so that they can be used again. In the end count/2 is returned because every cycle is counted twice going from the opposite path as well. Although it is not a completely optimal example, it gave us some ideas that might be useful as we move forward with our project.
 
@@ -34,7 +34,7 @@ Using the CSR representation, it is possible to utilize the multiplication metho
 
 For our cpu parallel version, the parallelization of the DFS and BFS was attempted. In the DFS based solution it was found out that parallelizing a DFS solution is hard and inefficient. We tried task based parallelization to create tasks with each DFS call but due to the nature of the DFS it is not very good performing either. We could not provide any numerical results since the big dataset is not halting currently with our serial implementation and the example datasets we are creating by hand are too small to give a meaningful result. We started to research a better parallelizable solution to our problem and we found out there are some solutions using BFS based solutions since from our research we understand that parallelizing a BFS solution is more common and preferred. To find cycles with small lengths searching the connected vertices to our vertex is required and one can try to reach the starting node with k (length of the cycle) steps. This makes us process all connected nodes and seems to be very computationally heavy. But this solution is easier to parallelize with tasks. And we thought of a way to reduce the number of searches needed to be made. First the distances of each node from the starting node should be found with parallel BFS, since we know the distance we can just work the previous algorithm from nodes that are at least k-2 nodes distant to the previous iteration. Since when we apply the finding algorithm we will find the possible cycles that can be formed using the nodes that are maximum k-2 distanced from the initial node. There are several techniques applied to have a good performing parallel bfs implementation such as bagging each layer and process layers sequentially but inside the bag, parallelism will be achieved.
 
-We realized we do not have to find out all possible cycles with length k to obtain our required result. We just needed to find out for each vertex how many times a vertex is present in a cycle with length k. We came across a really interesting solution that we are currently working on. Which is using adjacency matrix multiplications to determine the number of each vertex in a cycle. When we take the power of k of a adjacency matrix the resulting matrix is giving the result we need in diagonal entries. aii (subindex) is the 6\*number of cycles containing vertex i. Using that property we realized that we can write a massively parallel application since sparse-sparse matrix multiplication is one of the main areas of parallel computing and it can be parallelized in a very good manner. An example for our current approach would be the following. (using the graph in Figure 1.1). Adjacency matrix for that graph is shown in Figure 2.1.
+We realized we do not have to find out all possible cycles with length k to obtain our required result. We just needed to find out for each vertex how many times a vertex is present in a cycle with length k. Which is using adjacency matrix multiplications to determine the number of each vertex in a cycle. When we take the power of k of a adjacency matrix the resulting matrix is giving the result we need in diagonal entries. aii (subindex) is the 6\*number of cycles containing vertex i. Using that property we realized that we can write a massively parallel application since sparse-sparse matrix multiplication is one of the main areas of parallel computing and it can be parallelized in a very good manner. An example for our current approach would be the following. (using the graph in Figure 1.1). Adjacency matrix for that graph is shown in Figure 2.1.
 
 <img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Figure2_1.png" width="300px" alt="Figure 2.1"/>
 
@@ -47,14 +47,11 @@ Our output:
         3 - 3
         4 - 2
 
-
 To use the “multiplication method” we need to multiply our matrix with itself 4 times. The result is shown at the Figure 2.2
 
 <img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Figure2_2.png" width="300px" alt="Figure 2.2"/>
 
 To find out how many times 0 vertex is used we need to look at the a00 (subindex) which is 12. And according to the multiplication method we use 12/6 = 2 unique cycles with length 4 has vertex 0. So our output for 0 is 2. To demonstrate another example, the appearance of vertex 1 can be used. a11(subset) is 18. 18/6 = 3 unique cycles contains vertex 1.
-
-We are currently implementing parallel sparse sparse matrix multiplication to be used to find out the number of appearances of any vertex in required length cycles.
 
 ## Technical Description of the Parallel Application
 
@@ -91,46 +88,89 @@ In our latest model we are dealing with sparse matrix multiplication. The bigges
 One way to overcome these obstacles is to store only the non-zero data elements of the sparse matrix. We can use a list to store these elements along with their row and column indices., which is where CSR format comes into play. Thanks to the CSR format these matrix multiplications we use in our solution become much more manageable.
 <br/>
 
-### Cycle of 3
+## amazon.txt
 
-| #Threads | Runtime | Speedup | Throughput |
-| -------- | ------- | ------- | ---------- |
-| 1        | 3.08    | -       | 1.41       |
-| 4        | 1.97    | 1.56    | 1.25       |
-| 8        | 1.79    | 1.71    | 1.19       |
-| 16       | 1.81    | 1.702   | 0.89       |
-| 32       | 1.80    | 1.709   | 0.98       |
-| 60       | 1.75    | 1.759   | 1.07       |
+### Circuits of length 3
 
-<br/>
-
-### Cycle of 4
-
-| #Threads | Runtime | Speedup | Throughput |
-| -------- | ------- | ------- | ---------- |
-| 1        | 6.53    | -       | 1.61       |
-| 4        | 3.04    | 2.14    | 1.45       |
-| 8        | 2.44    | 2.67    | 1.39       |
-| 16       | 2.29    | 2.85    | 1.09       |
-| 32       | 2.24    | 2.90    | 1.14       |
-| 60       | 2.27    | 2.86    | 0.94       |
+| #Threads | Runtime | Speedup |
+| -------- | ------- | ------- |
+| 1        | 0.81    | -       |
+| 4        | 0.52    | 1.55    |
+| 8        | 0.50    | 1.62    |
+| 16       | 0.48    | 1.68    |
+| 32       | 0.47    | 1.72    |
+| 60       | 0.45    | 1.8     |
 
 <br/>
 
-### Cycle of 5
+### Circuits of length 4
 
-| #Threads | Runtime | Speedup | Throughput |
-| -------- | ------- | ------- | ---------- |
-| 1        | 19.05   | -       | 1.84       |
-| 4        | 6.79    | 2.80    | 1.72       |
-| 8        | 4.61    | 4.13    | 1.68       |
-| 16       | 3.65    | 5.21    | 1.44       |
-| 32       | 3.30    | 5.76    | 1.58       |
-| 60       | 3.23    | 5.90    | 1.48       |
+| #Threads | Runtime | Speedup |
+| -------- | ------- | ------- |
+| 1        | 5.60    | -       |
+| 4        | 2.17    | 2.55    |
+| 8        | 1.84    | 3.04    |
+| 16       | 1.49    | 3.75    |
+| 32       | 1.41    | 3.97    |
+| 60       | 1.32    | 4.24    |
+
+<br/>
+
+### Circuits of length 5
+
+| #Threads | Runtime | Speedup |
+| -------- | ------- | ------- |
+| 1        | 18.17   | -       |
+| 4        | 5.88    | 3.09    |
+| 8        | 4.12    | 4.41    |
+| 16       | 2.81    | 6.46    |
+| 32       | 2.61    | 6.96    |
+| 60       | 2.35    | 7.73    |
+
+## dblp.txt
+
+### Circuits of length 3
+
+| #Threads | Runtime | Speedup |
+| -------- | ------- | ------- |
+| 1        | 1.02    | -       |
+| 4        | 0.61    | 1.67    |
+| 8        | 0.59    | 1.72    |
+| 16       | 0.61    | 1.67    |
+| 32       | 0.62    | 1.64    |
+| 60       | 0.69    | 1.47    |
+
+<br/>
+
+### Circuits of length 4
+
+| #Threads | Runtime | Speedup |
+| -------- | ------- | ------- |
+| 1        | 9.83    | -       |
+| 4        | 3.90    | 2.52    |
+| 8        | 3.21    | 3.06    |
+| 16       | 2.75    | 3.58    |
+| 32       | 2.72    | 3.61    |
+| 60       | 2.70    | 3.64    |
+
+<br/>
+
+### Circuits of length 5
+
+| #Threads | Runtime | Speedup |
+| -------- | ------- | ------- |
+| 1        | 50.32   | -       |
+| 4        | 15.66   | 3.21    |
+| 8        | 9.28    | 5.42    |
+| 16       | 6.73    | 7.47    |
+| 32       | 5.95    | 8.45    |
+| 60       | 6.00    | 8.38    |
 
 When it comes to the scaling, our program starts good but as the thread number increases the speed-up rate does not increase proportionally. That is why we think our parallel version has weak scaling.
 
 GPU Performance:
+
+## amazon.txt
 
 #### GPU - Cycle of 3 => 513.056458ms
 
@@ -144,9 +184,23 @@ GPU Performance:
 
 <img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle5GPU.png" alt="Gpu 3 Cycle"/>
 
-## Achievements
+## dblp.txt
 
-Within the scope of the project, parallelization of the algorithm was succeeded and a considerable amount of improvements were recorded both in the CPU and GPU implementations. Further improvements can be recorded by changing the scheduling method with dynamic scheduling. Also other algorithms can be considered such as BFS and DFS, whose implementation will be more complex in terms of parallelization.
+#### GPU - Cycle of 3 => 513.056458ms
+
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle3GPU.png" alt="Gpu 3 Cycle"/>
+
+#### GPU - Cycle of 4 => 2935.376221ms
+
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle4GPU.png" alt="Gpu 3 Cycle"/>
+
+#### GPU - Cycle of 5 => 3644.884766ms
+
+<img src="https://raw.githubusercontent.com/kayagokalp/cs406-project/main/images/Cycle5GPU.png" alt="Gpu 3 Cycle"/>
+
+## Conclusion
+
+Within the scope of the project, parallelization of the algorithm was succeeded, although as it was intended in the beginning, it does not calculate the number of cycles the node in question appears in. Rather, it calculates the number of circuits the node in question appears in. There seems to be no solutions for that as the algorithm only counts the amount of circuits and does not list the circuits. For finding circuits, performance wise, considerable amount of improvements were recorded both in the CPU and GPU implementations with the parallelization. One of the improvements to be made is implementing the CPU parallelization using dynamic scheduling. Also, for calculating cycles instead of circuits, the mentioned DFS and BFS algorithms should be considered though, it is possible to foresee that their implementation will be more complex.
 
 ## Resources
 
