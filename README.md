@@ -12,8 +12,6 @@ In this problem we are given a file containing information about an undirected g
 
 As you can see in Figure 1 above, if we have an undirected graph like this and our k = 3 this means that we will search for circuits of length 3 inside our graph. Here we have 2 circuits with 3 vertices. First one is 2-3-4-2 and the other one is 6-7-8-6.
 
-Also we’re supposed to run this program as .\executable path_to_file k
-
 In the file, for each line ui < vi. You need to add the other orientation to the CSR data structure.
 
 When working on small samples such as the above example, HPC is not needed at all, however when we tested our serial DFS version with the bigger matrices the calculation took so much time. Other than DFS, there were 2 options that were considered. One of them was BFS and the other one is a method which takes advantage of the properties of adjacency matrices. We realized that performance-wise BFS would not provide any considerable improvements compared to DFS, that is why the second mentioned method is used on the rest of the project. Throughout the project this method is referred to as the “multiplication method”.
